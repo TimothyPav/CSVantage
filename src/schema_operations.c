@@ -1,7 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdbool.h>
+#include <string.h>
 #include "../include/db_structs.h"
-
 
 TableSchema *create_table_schema(char *name) {
     TableSchema *schema = malloc(sizeof(TableSchema));
@@ -25,11 +26,48 @@ void add_field(TableSchema *schema, char *field_name, char *field_type){
     schema->fields[i].type = field_type; // adding type to field[i]
 }
 
+void create_csv(TableSchema *schema, FILE *file_pointer){
+    for(int i=0; i<schema->field_count; i++){
+        // append ',' to the end of the name if not the last field in schema
+        if(i == schema->field_count-1) fprintf(file_pointer, "%s", schema->fields[i].name);
+        else fprintf(file_pointer, "%s,", schema->fields[i].name);
+    }
+}
+
+bool file_exists(const char *filename){
+    FILE *fp = fopen(filename, "r");
+    bool is_exist = false;
+    if (fp != NULL)
+    {
+        is_exist = true;
+        fclose(fp); // close the file
+    }
+    return is_exist;
+}
+
 int main() {
-    //printf("Hello World\n");
-    TableSchema *table = create_table_schema("test");
+    char name_of_table[100] = "test";
+    char *file_type = ".csv";
+    strcat(name_of_table, file_type);
+    TableSchema *table = create_table_schema(name_of_table);
+
+    if(file_exists(table->table_name)) {
+        printf("File with name '%s' already exists.\n", table->table_name);
+        exit(EXIT_FAILURE);
+    }
+
     add_field(table, "field1", "int");
     add_field(table, "field2", "char");
+    add_field(table, "field3", "int");
+    add_field(table, "field4", "char");
+    add_field(table, "field5", "int");
+    add_field(table, "field6", "char");
+
+    FILE * file_pointer;
+    file_pointer = fopen(table->table_name, "w+");
+    create_csv(table, file_pointer);
+    fclose(file_pointer);
     printf("%d\n",table->field_count);
     printf("name: %s type: %s\n", table->fields[1].name, table->fields[1].type);
+
 }

@@ -1,15 +1,11 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 int main() {
-    FILE* test;
+    char *a = "field1";
+    char b[10] = " Adding";
 
-    test = fopen("test.csv", "w+");
-
-    fprintf(test, "qwerty %s,", "please work first try");
-    fprintf(test, "hi there %s,\n", "this is the what line?");
-    fprintf(test, "this will be on the new line %s", "please work first try");
-    fclose(test);
-
-    printf("Everything should've worked\n");
+    strcpy(a,b);
+    printf("%s\n", a);
 }

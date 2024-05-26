@@ -91,6 +91,8 @@ void read_fields_csv(TableSchema *schema, FILE *file_pointer){
             i++;
         }
     } while (ch != EOF);
+
+    rewind(file_pointer); // rewind file pointer to the top of the file
 }
 
 void select_entries_in_field(TableSchema *schema, char *field, FILE *file_pointer){
@@ -106,33 +108,31 @@ void select_entries_in_field(TableSchema *schema, char *field, FILE *file_pointe
         printf("No field matching '%s' found\n", field);
         exit(EXIT_FAILURE);
     }
-    printf("index: %d\n", index);
 
     char ch;
-    int column, row = 0;
+    int column = 0, row = 0;
     do{
         ch = fgetc(file_pointer);
         if (ch == '\n'){
             column = 0;
             row++;
             printf("\n");
+            continue;
         }
         else if(ch == ','){
             column++;
+            continue;
         }
 
-        if(column == index){
+        if(column == index && row > 0){
             printf("%c", ch);
         }
-
-        
-
 
     } while (ch != EOF);
 }
 
 int main() {
-    char name_of_table[100] = "test";
+    char name_of_table[100] = "customers-100";
     char *file_type = ".csv";
     strcat(name_of_table, file_type);
     TableSchema *table = create_table_schema(name_of_table);
@@ -145,7 +145,7 @@ int main() {
 
         //add_field(table, "field7", "int");
 
-        select_entries_in_field(table, "field3", file_parser);
+        select_entries_in_field(table, "First Name", file_parser);
         //read_fields_csv(table, file_parser);
         for(int i=0; i<table->field_count; i++){
             //printf("name: %s index: %d\n", table->fields[i].name, table->fields[i].field_index);

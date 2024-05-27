@@ -25,6 +25,8 @@ void add_field(TableSchema *schema, char *field_name, char *field_type){
     schema->fields[i].name = strdup(field_name); // Copying name to field[i]
     schema->fields[i].type = strdup(field_type); // Copying type to field[i]
     schema->fields[i].field_index = schema->field_count; 
+
+    //printf("name: %s\n", schema->fields[i].name);
 }
 
 void create_csv(TableSchema *schema, FILE *file_pointer){
@@ -80,7 +82,8 @@ void read_fields_csv(TableSchema *schema, FILE *file_pointer){
         }
         else if(ch == '\n'){
             s[i] = '\0';
-            add_field(schema, s, "int");
+            add_field(schema, s, "placeholder");
+            printf("last field: %s\n", s);
             field_num++;
             i = 0;
             s[0] = '\0';
@@ -95,22 +98,35 @@ void read_fields_csv(TableSchema *schema, FILE *file_pointer){
     rewind(file_pointer); // rewind file pointer to the top of the file
 }
 
-void select_entries_in_field(TableSchema *schema, char *field, FILE *file_pointer){
+bool lossey_str_cmp(char *input, char *existing_field){
+    int i = 0;
+    int j = 0;
+    while(existing_field[i] != '\0'){
+        if(existing_field[i] == input[j]){
+            j++;
+            if(input[j] == '\0') return true;
+        }
+        else {
+            j = 0;
+        }
+        i++;
+    }
+    return false;
+}
+
+void select_column_by_field(TableSchema *schema, char *field, FILE *file_pointer){
     read_fields_csv(schema, file_pointer);
 
     int index = -1;
     for(int i=0; i<schema->field_count; i++){
-        //printf("name: %s index: %d\n", schema->fields[i].name, schema->fields[i].field_index);
-        if(strcmp(field, schema->fields[i].name) == 0){
-            index = schema->fields[i].field_index-1;
-        }
+        if(lossey_str_cmp(field, schema->fields[i].name)) index = schema->fields[i].field_index-1;
     } if (index == -1){
         printf("No field matching '%s' found\n", field);
         exit(EXIT_FAILURE);
     }
 
     char ch;
-    int column = 0, row = 0;
+    int column = 0, row = 0, quotes = 0;
     do{
         ch = fgetc(file_pointer);
         if (ch == '\n'){
@@ -119,9 +135,12 @@ void select_entries_in_field(TableSchema *schema, char *field, FILE *file_pointe
             printf("\n");
             continue;
         }
-        else if(ch == ','){
+        else if(ch == ',' && quotes % 2 == 0){
             column++;
             continue;
+        }
+        else if(ch == '"'){
+            quotes++;
         }
 
         if(column == index && row > 0){
@@ -132,7 +151,7 @@ void select_entries_in_field(TableSchema *schema, char *field, FILE *file_pointe
 }
 
 int main() {
-    char name_of_table[100] = "customers-100";
+    char name_of_table[100] = "hurricanes";
     char *file_type = ".csv";
     strcat(name_of_table, file_type);
     TableSchema *table = create_table_schema(name_of_table);
@@ -145,10 +164,10 @@ int main() {
 
         //add_field(table, "field7", "int");
 
-        select_entries_in_field(table, "First Name", file_parser);
+        select_column_by_field(table, "2015", file_parser);
         //read_fields_csv(table, file_parser);
         for(int i=0; i<table->field_count; i++){
-            //printf("name: %s index: %d\n", table->fields[i].name, table->fields[i].field_index);
+            printf("name: %s index: %d\n", table->fields[i].name, table->fields[i].field_index);
         }
 
         fclose(file_parser);

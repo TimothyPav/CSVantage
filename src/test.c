@@ -3,26 +3,19 @@
 #include <string.h>
 #include <stdbool.h>
 
-bool lossey_str_cmp(char *input, char *existing_field){
-    int i = 0;
-    int j = 0;
-    while(existing_field[i] != '\0'){
-        if(existing_field[i] == input[j]){
-            j++;
-            if(input[j] == '\0') return true;
-        }
-        else {
-            j = 0;
-        }
-        i++;
+char ** test(char *arr[], int size){
+
+    for(int i=0; i<size; i++){
+        arr[i] = strdup("abcdefghijklmnopqrstuvwxyz");
     }
-    return false;
+
 }
 
 int main() {
-    char *a = "2016";
-    char *b = "qwerty 1 2015 qwrety";
+    char *qdsf[5];
+    test(qdsf,5);
 
-    bool x = lossey_str_cmp(a, b);
-    printf("Your boolean variable is: %s\n", x ? "true" : "false");
+    for(int i=0; i<5; i++){
+        printf("qdsf[%d] = %s\n", i, qdsf[i]);
+    }
 }

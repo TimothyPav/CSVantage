@@ -4,6 +4,8 @@
 #include <string.h>
 #include "../include/db_structs.h"
 
+#define BUF_SIZE 65536
+
 TableSchema *create_table_schema(char *name) {
     TableSchema *schema = malloc(sizeof(TableSchema));
     if (schema == NULL) return NULL;
@@ -26,7 +28,7 @@ void add_field(TableSchema *schema, char *field_name, char *field_type){
     schema->fields[i].type = strdup(field_type); // Copying type to field[i]
     schema->fields[i].field_index = schema->field_count; 
 
-    //printf("name: %s\n", schema->fields[i].name);
+    //printf("name: %s  field_count: %d\n", schema->fields[i].name, schema->field_count);
 }
 
 void create_csv(TableSchema *schema, FILE *file_pointer){
@@ -44,14 +46,28 @@ void create_entry(TableSchema *schema, char *arr[schema->field_count], FILE *fil
     }
 }
 
-void appendChar(char* str, char c, size_t max_len) {
-    size_t len = strlen(str);
-    if (len + 1 < max_len) { // Check if there's room for one more character and the null terminator
-        str[len] = c;       // Place the character at the end of the current string
-        str[len + 1] = '\0';// Null-terminate the string
+void append_char_to_string(char **str, char c) {
+    if (*str == NULL) {
+        // First allocation must be for two characters: the new char and '\0'
+        *str = malloc(2); // Allocate space for character and '\0'
+        if (*str == NULL) {
+            perror("Failed to allocate memory");
+            exit(EXIT_FAILURE);
+        }
+        (*str)[0] = c;
+        (*str)[1] = '\0';
     } else {
-        // Handle the error in case there's no room
-        fprintf(stderr, "Not enough space to append character.\n");
+        // Find current length of the string
+        int len = strlen(*str);
+        // Allocate space for the current length + new char + '\0'
+        char *new_str = realloc(*str, len + 2);
+        if (new_str == NULL) {
+            perror("Failed to reallocate memory");
+            exit(EXIT_FAILURE);
+        }
+        *str = new_str;
+        (*str)[len] = c;     // Append the new character
+        (*str)[len + 1] = '\0'; // Null-terminate the string
     }
 }
 
@@ -83,7 +99,6 @@ void read_fields_csv(TableSchema *schema, FILE *file_pointer){
         else if(ch == '\n'){
             s[i] = '\0';
             add_field(schema, s, "placeholder");
-            printf("last field: %s\n", s);
             field_num++;
             i = 0;
             s[0] = '\0';
@@ -114,25 +129,45 @@ bool lossey_str_cmp(char *input, char *existing_field){
     return false;
 }
 
-void select_column_by_field(TableSchema *schema, char *field, FILE *file_pointer){
+void select_column_by_field(TableSchema *schema, char *field, FILE *file_pointer, char** arr){
+    if (schema == NULL || field == NULL || file_pointer == NULL || arr == NULL) {
+        fprintf(stderr, "Invalid input to function\n");
+        return;  // Optionally handle the error more gracefully or exit if critical
+    }
+    
     read_fields_csv(schema, file_pointer);
 
     int index = -1;
     for(int i=0; i<schema->field_count; i++){
-        if(lossey_str_cmp(field, schema->fields[i].name)) index = schema->fields[i].field_index-1;
+        //printf("Attempting to match field '%s' with '%s'\n", field, schema->fields[i].name);
+        if(lossey_str_cmp(field, schema->fields[i].name)) {
+            index = schema->fields[i].field_index-1;
+            break;
+        }
     } if (index == -1){
         printf("No field matching '%s' found\n", field);
         exit(EXIT_FAILURE);
     }
 
+    char s[255] = {0};
     char ch;
-    int column = 0, row = 0, quotes = 0;
+    int column = 0, row = 0, quotes = 0, i = 0;
     do{
         ch = fgetc(file_pointer);
         if (ch == '\n'){
             column = 0;
             row++;
-            printf("\n");
+            
+            if(row > 1) {
+                printf("\n");
+                s[i] = '\0';
+                //printf("s: %s\n", s);
+                //printf("row: %d\n", row-2);
+                //arr[row-2] = malloc(strlen(s) + 99);
+                arr[row-2] = strdup(s);
+                i = 0;
+                s[0] = '\0';
+            }
             continue;
         }
         else if(ch == ',' && quotes % 2 == 0){
@@ -144,14 +179,36 @@ void select_column_by_field(TableSchema *schema, char *field, FILE *file_pointer
         }
 
         if(column == index && row > 0){
-            printf("%c", ch);
+            //printf("%c", ch);
+            s[i++] = ch;
         }
 
     } while (ch != EOF);
 }
 
+int get_rows(FILE *file_pointer){
+    char buf[BUF_SIZE];
+    int counter = 0;
+    for(;;)
+    {
+        size_t res = fread(buf, 1, BUF_SIZE, file_pointer);
+        if (ferror(file_pointer))
+            return -1;
+
+        int i;
+        for(i = 0; i < res; i++)
+            if (buf[i] == '\n')
+                counter++;
+
+        if (feof(file_pointer))
+            break;
+    }
+    rewind(file_pointer);
+    return counter;
+}
+
 int main() {
-    char name_of_table[100] = "hurricanes";
+    char name_of_table[100] = "people-100";
     char *file_type = ".csv";
     strcat(name_of_table, file_type);
     TableSchema *table = create_table_schema(name_of_table);
@@ -163,12 +220,28 @@ int main() {
         FILE *file_parser = fopen(table->table_name, "r");
 
         //add_field(table, "field7", "int");
-
-        select_column_by_field(table, "2015", file_parser);
-        //read_fields_csv(table, file_parser);
-        for(int i=0; i<table->field_count; i++){
-            printf("name: %s index: %d\n", table->fields[i].name, table->fields[i].field_index);
+        int num_rows = get_rows(file_parser); // Call get_rows once and store the result to avoid multiple calls
+        if (num_rows <= 0) {
+            fprintf(stderr, "Failed to get the number of rows\n");
+            exit(EXIT_FAILURE);
         }
+
+        char **column_data = (char **)malloc(num_rows * sizeof(char*));
+        if (column_data == NULL) {
+            perror("Failed to allocate memory for column_data");
+            exit(EXIT_FAILURE);
+        }
+
+        // for (int i = 0; i < num_rows; ++i) {
+        //     column_data[i] = malloc(sizeof(char)+1);  // Initialize as NULL, allocate later as needed
+        // }
+
+        select_column_by_field(table, "Job Title", file_parser, column_data);
+
+        for(int i=0; i<num_rows-1; i++){
+            printf("column_data[%d] = %s\n", i, column_data[i]);
+        }
+        printf("\n");
 
         fclose(file_parser);
 

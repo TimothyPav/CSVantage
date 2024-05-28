@@ -159,7 +159,6 @@ void select_column_by_field(TableSchema *schema, char *field, FILE *file_pointer
             row++;
             
             if(row > 1) {
-                printf("\n");
                 s[i] = '\0';
                 //printf("s: %s\n", s);
                 //printf("row: %d\n", row-2);
@@ -184,6 +183,7 @@ void select_column_by_field(TableSchema *schema, char *field, FILE *file_pointer
         }
 
     } while (ch != EOF);
+    rewind(file_pointer);
 }
 
 int get_rows(FILE *file_pointer){
@@ -205,6 +205,63 @@ int get_rows(FILE *file_pointer){
     }
     rewind(file_pointer);
     return counter;
+}
+
+void freeTableSchema(TableSchema *schema) {
+    if (schema == NULL) return;
+
+    // Free each Field struct within the fields array
+    for (int i = 0; i < schema->field_count; i++) {
+        free(schema->fields[i].name);   // Free the name string of the Field
+        free(schema->fields[i].type);   // Free the type string of the Field
+    }
+
+    free(schema->fields);
+    free(schema);
+}
+
+bool is_in_table(TableSchema* schema, FILE* file_pointer, char* input){
+    char ch;
+    int column = 0, row = 0, quotes = 0, i = 0;
+    char s[255] = {0};
+    while(ch != EOF){
+        //printf("Hello\n");
+        ch = fgetc(file_pointer);
+        if (ch == '\n'){
+            s[i] = '\0';
+            if(lossey_str_cmp(input, s)){
+                printf("\\n\n");
+                printf("Match found at [row][column]: [%d][%d]\n", row+1, column+1);
+                return true;
+            }
+            column = 0;
+            row++;
+            i = 0;
+            s[0] = '\0';
+            
+            continue;
+        }
+        else if(ch == ',' && quotes % 2 == 0){
+            s[i] = '\0';
+            if(lossey_str_cmp(input, s)){
+                printf(",\n");
+                printf("Match found at [row][column]: [%d][%d]\n", row+1, column+1);
+                return true;
+            }
+            column++;
+            i = 0;
+            s[0] = '\0';
+            continue;
+        }
+        else if(ch == '"'){
+            quotes++;
+        }
+        else {
+            s[i++] = ch;
+        }
+
+    }
+    return false;
 }
 
 int main() {
@@ -238,10 +295,14 @@ int main() {
 
         select_column_by_field(table, "Job Title", file_parser, column_data);
 
+        bool x = is_in_table(table, file_parser, "IT sales professional");
+        printf("Your boolean variable is: %s\n", x ? "true" : "false");
+
         for(int i=0; i<num_rows-1; i++){
-            printf("column_data[%d] = %s\n", i, column_data[i]);
+            //printf("column_data[%d] = %s\n", i, column_data[i]);
+            free(column_data[i]);
         }
-        printf("\n");
+        free(column_data);
 
         fclose(file_parser);
 
@@ -266,7 +327,7 @@ int main() {
         for(int i=0; i<table->field_count; i++){
             //printf("name: %s index: %d\n", table->fields[i].name, table->fields[i].field_index);
         }
-
         fclose(file_pointer);
-    }   
+    }
+    freeTableSchema(table);
 }

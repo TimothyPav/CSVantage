@@ -7,6 +7,25 @@
 
 #define BUF_SIZE 65536
 
+//CREATE
+TableSchema *create_table_schema(char *name);
+void add_field(TableSchema *schema, char *field_name, char *field_type);
+void create_csv(TableSchema *schema, FILE *file_pointer);
+void create_entry(TableSchema *schema, char *arr[schema->field_count],FILE *file_pointer);
+
+//READ
+void read_fields_csv(TableSchema *schema, FILE *file_pointer);
+void select_column_by_field(TableSchema *schema, char *field, FILE *file_pointer, char **arr);
+bool is_in_table(TableSchema *schema, FILE *file_pointer, char *input);
+void print_rows_including_input(FILE* file_pointer, char* input);
+
+//UPDATE
+
+//DELETE
+void delete_last_line(TableSchema *schema, FILE *file_pointer, int num_of_lines);
+void delete_row_including_input(TableSchema *schema, FILE *file_pointer, char *input);
+
+
 TableSchema *create_table_schema(char *name)
 {
   TableSchema *schema = malloc(sizeof(TableSchema));
@@ -162,8 +181,7 @@ bool lossey_str_cmp(char *input, char *existing_field)
   return false;
 }
 
-void select_column_by_field(TableSchema *schema, char *field,
-                            FILE *file_pointer, char **arr)
+void select_column_by_field(TableSchema *schema, char *field, FILE *file_pointer, char **arr)
 {
   if (schema == NULL || field == NULL || file_pointer == NULL || arr == NULL)
   {
@@ -346,11 +364,12 @@ void delete_last_line(TableSchema *schema, FILE *file_pointer, int num_of_lines)
   int status = remove(name_of_table);
   if (status == 0)
   {
-    printf("File deleted successfully.\n");
+    //printf("File deleted successfully.\n");
   }
   else
   {
     perror("Failed to delete the file");
+    exit(EXIT_FAILURE);
   }
   rename("temp.csv", name_of_table);
   fclose(temp_file_pointer);
@@ -364,7 +383,7 @@ void delete_row_including_input(TableSchema *schema, FILE *file_pointer, char *i
   char ch = '?';
   rewind(file_pointer);
   int row = 0;
-  //bool input_seen = false;
+  bool something_was_deleted = false;
 
   while(1){
     ch = fgetc(file_pointer);
@@ -375,26 +394,62 @@ void delete_row_including_input(TableSchema *schema, FILE *file_pointer, char *i
       if(!lossey_str_cmp(input, line)) fputs(line, temp_file_pointer);
       else{
         printf("row:%d deleted\n", row);
+        something_was_deleted = true;
       }
       line = NULL;
     }
 
   }
+  if(!something_was_deleted) printf("No text matching '%s' was found\n", input);
 
   char *name_of_table = schema->table_name;
   int status = remove(name_of_table);
   if (status == 0)
   {
-    printf("File deleted successfully.\n");
+    //printf("File deleted successfully.\n");
   }
   else
   {
     perror("Failed to delete the file");
+    exit(EXIT_FAILURE);
   }
   rename("temp.csv", name_of_table);
   fclose(temp_file_pointer);
   rewind(file_pointer);
 
+}
+
+void print_rows_including_input(FILE* file_pointer, char* input){
+  char* line = NULL;
+  char ch = '?';
+  rewind(file_pointer);
+  int row = 0;
+  bool something_was_deleted = false;
+
+  while(1){
+    ch = fgetc(file_pointer);
+    if(ch == EOF) break;
+    append_char_to_string(&line, ch);
+    if(ch == '\n'){
+      row++;
+      if(lossey_str_cmp(input, line)) printf("%s", line);
+      line = NULL;
+    }
+
+  }
+  rewind(file_pointer);
+}
+
+void print_entire_table(FILE* file_pointer){
+  rewind(file_pointer);
+  char ch = '?';
+  while(1){
+    ch = fgetc(file_pointer);
+    if(ch == EOF) break;
+    printf("%c", ch);
+  }
+  rewind(file_pointer);
+  printf("\n");
 }
 
 int main()
@@ -437,7 +492,7 @@ int main()
     //bool x = is_in_table(table, file_parser, "IT sales professional");
     //printf("Your boolean variable is: %s\n", x ? "true" : "false");
     printf("num_of_rows:%d\n", get_rows(file_parser));
-    delete_row_including_input(table, file_parser, "Marcus");
+    print_entire_table(file_parser);
     printf("num_of_rows:%d\n", get_rows(file_parser));
     /*
      for (int i = 0; i < num_rows - 1; i++) {

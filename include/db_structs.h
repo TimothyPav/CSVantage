@@ -3,7 +3,8 @@
 
 typedef struct {
     char *name; // Name of field
-    char *type; // Data type of field
+    char *type; // Data type of fields
+    int field_index;
 } Field;
 
 typedef struct {

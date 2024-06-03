@@ -1,5 +1,4 @@
 #include "../include/db_structs.h"
-// #include <cstddef>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -18,12 +17,16 @@ void read_fields_csv(TableSchema *schema, FILE *file_pointer);
 void select_column_by_field(TableSchema *schema, char *field, FILE *file_pointer, char **arr);
 bool is_in_table(TableSchema *schema, FILE *file_pointer, char *input);
 void print_rows_including_input(FILE* file_pointer, char* input);
+void print_entire_table(FILE* file_pointer);
 
 //UPDATE
+void update_find_and_replace(TableSchema* schema, FILE* file_pointer, char* find_input, char* replace_input);
+void update_record_based_on_another_record(TableSchema* schema, FILE* file_pointer, char* input, char* field, char* replace);
 
 //DELETE
 void delete_last_line(TableSchema *schema, FILE *file_pointer, int num_of_lines);
 void delete_row_including_input(TableSchema *schema, FILE *file_pointer, char *input);
+void delete_entire_column_based_on_field_input(TableSchema* schema, FILE* file_pointer, char* field);
 
 
 TableSchema *create_table_schema(char *name)
@@ -130,6 +133,7 @@ void read_fields_csv(TableSchema *schema, FILE *file_pointer)
   char s[256] = {0};
   int i = 0;
   int field_num = 1;
+  rewind(file_pointer);
   do
   {
     ch = fgetc(file_pointer);
@@ -189,7 +193,7 @@ void select_column_by_field(TableSchema *schema, char *field, FILE *file_pointer
     return; // Optionally handle the error more gracefully or exit if critical
   }
 
-  read_fields_csv(schema, file_pointer);
+  //read_fields_csv(schema, file_pointer);
 
   int index = -1;
   for (int i = 0; i < schema->field_count; i++)
@@ -251,27 +255,25 @@ void select_column_by_field(TableSchema *schema, char *field, FILE *file_pointer
   rewind(file_pointer);
 }
 
-int get_rows(FILE *file_pointer)
-{
-  char buf[BUF_SIZE];
-  int counter = 0;
-  for (;;)
-  {
-    size_t res = fread(buf, 1, BUF_SIZE, file_pointer);
-    if (ferror(file_pointer))
-      return -1;
+int get_rows(FILE *file_pointer){
+    char buf[BUF_SIZE];
+    int counter = 0;
+    for(;;)
+    {
+        size_t res = fread(buf, 1, BUF_SIZE, file_pointer);
+        if (ferror(file_pointer))
+            return -1;
 
-    int i;
-    for (i = 0; i < res; i++)
-      if (buf[i] == '\n')
-        counter++;
+        int i;
+        for(i = 0; i < res; i++)
+            if (buf[i] == '\n')
+                counter++;
 
-    if (feof(file_pointer))
-      break;
-  }
-
-  rewind(file_pointer);
-  return counter;
+        if (feof(file_pointer))
+            break;
+    }
+    rewind(file_pointer);
+    return counter;
 }
 
 void freeTableSchema(TableSchema *schema)
@@ -404,11 +406,7 @@ void delete_row_including_input(TableSchema *schema, FILE *file_pointer, char *i
 
   char *name_of_table = schema->table_name;
   int status = remove(name_of_table);
-  if (status == 0)
-  {
-    //printf("File deleted successfully.\n");
-  }
-  else
+  if (!(status == 0))
   {
     perror("Failed to delete the file");
     exit(EXIT_FAILURE);
@@ -416,7 +414,8 @@ void delete_row_including_input(TableSchema *schema, FILE *file_pointer, char *i
   rename("temp.csv", name_of_table);
   fclose(temp_file_pointer);
   rewind(file_pointer);
-
+  free(line);
+  line = NULL;
 }
 
 void print_rows_including_input(FILE* file_pointer, char* input){
@@ -438,6 +437,8 @@ void print_rows_including_input(FILE* file_pointer, char* input){
 
   }
   rewind(file_pointer);
+  free(line);
+  line = NULL;
 }
 
 void print_entire_table(FILE* file_pointer){
@@ -450,6 +451,258 @@ void print_entire_table(FILE* file_pointer){
   }
   rewind(file_pointer);
   printf("\n");
+}
+
+void delete_entire_column_based_on_field_input(TableSchema* schema, FILE* file_pointer, char* field){
+  int index = -1;
+  for (int i = 0; i < schema->field_count; i++)
+  {
+    // printf("Attempting to match field '%s' with '%s'\n", field,
+    // schema->fields[i].name);
+    if (lossey_str_cmp(field, schema->fields[i].name))
+    {
+      index = schema->fields[i].field_index - 1;
+      break;
+    }
+  }
+  if (index == -1)
+  {
+    printf("No field matching '%s' found\n", field);
+    exit(EXIT_FAILURE);
+  }
+  FILE* temp_file_pointer = fopen("temp.csv", "w");
+  int column = 0, row = 0, quotes = 0;
+  rewind(file_pointer);
+  char ch = '?';
+  while(1){
+    ch = fgetc(file_pointer);
+    if(ch == EOF) break;
+    
+    if (ch == ',' && quotes % 2 == 0)
+    {
+      column++;
+      //continue;
+    }
+    else if (ch == '"')
+    {
+      quotes++;
+    }
+
+    if (!(column == index && ch != '\n') && !(index == 0 && column-1 == 0 && ch == ','))
+    {
+      //printf("%c", ch);
+      fputc(ch, temp_file_pointer);
+    } else{
+      //printf("%c", ch);
+    }
+    
+    if (ch == '\n')
+    {
+      column = 0;
+      row++;
+      //continue;
+    }
+  }
+  printf("\n");
+
+  char *name_of_table = schema->table_name;
+  int status = remove(name_of_table);
+  if (!(status == 0))
+  {
+    perror("Failed to delete the file");
+    exit(EXIT_FAILURE);
+  } else {
+    //printf("Deleted file successfully\n");
+  }
+  rename("temp.csv", name_of_table);
+  fclose(temp_file_pointer);
+  rewind(file_pointer);
+
+}
+
+void clearString(char *str) {
+    if (str != NULL) {
+        memset(str, 0, strlen(str));
+    }
+}
+
+void update_find_and_replace(TableSchema* schema, FILE* file_pointer, char* find_input, char* replace_input){
+  char* s;
+  char ch = '?';
+  int column = 0, row = 0, quotes = 0, number_of_replacements = 0;
+  int length_of_replace_input = strlen(find_input);
+  FILE* temp_file_pointer = fopen("temp.csv", "w");
+  rewind(file_pointer);
+
+  clearString(s);
+  while(1)
+  {
+    ch = fgetc(file_pointer);
+    if(ch == EOF) break;
+    if (ch == '\n')
+    {
+      column = 0;
+      if((row > 0) && (length_of_replace_input == strlen(s)) && (lossey_str_cmp(s, find_input))){
+        printf("Found match @ [row][column]: [%d][%d]. Update Successful!\n", row, column);
+        number_of_replacements++;
+        fputs(replace_input, temp_file_pointer);
+      } else {
+        fputs(s, temp_file_pointer);
+      }
+      row++;
+      clearString(s);
+      fputc(ch, temp_file_pointer);
+    }
+    else if (ch == ',' && quotes % 2 == 0)
+    {
+      column++;
+      if((row > 0) && (length_of_replace_input == strlen(s)) && (lossey_str_cmp(s, find_input))){
+        printf("Found match @ [row][column]: [%d][%d]. Update Successful!\n", row, column);
+        number_of_replacements++;
+        fputs(replace_input, temp_file_pointer);
+      } else {
+        fputs(s, temp_file_pointer);
+      }
+      clearString(s);
+      fputc(ch, temp_file_pointer);
+    }
+    else if (ch == '"')
+    {
+      quotes++;
+      append_char_to_string(&s, ch);
+    }
+    else{
+      append_char_to_string(&s, ch);
+    }
+
+  }
+  printf("Number of replacements: %d\n", number_of_replacements);
+  char *name_of_table = schema->table_name;
+  int status = remove(name_of_table);
+  if (!(status == 0))
+  {
+    perror("Failed to delete the file");
+    exit(EXIT_FAILURE);
+  } else {
+    //printf("Deleted file successfully\n");
+  }
+  rename("temp.csv", name_of_table);
+  fclose(temp_file_pointer);
+  rewind(file_pointer);
+  free(s);
+  s = NULL;
+}
+
+void update_record_based_on_another_record(TableSchema* schema, FILE* file_pointer, char* input, char* field, char* replace){
+  int index = -1;
+  for (int i = 0; i < schema->field_count; i++)
+  {
+    if (lossey_str_cmp(field, schema->fields[i].name))
+    {
+      index = schema->fields[i].field_index - 1;
+      break;
+    }
+  }
+  if (index == -1)
+  {
+    printf("No field matching '%s' found\n", field);
+    exit(EXIT_FAILURE);
+  }
+  char* no_match_s;
+  char* match_s;
+  char* current_record;
+  char ch = '?';
+  int column = 0, row = 0, quotes = 0, number_of_replacements = 0;
+  int length_of_replace_input = strlen(input);
+  bool insterted = false;
+  bool match_found = false;
+  FILE* temp_file_pointer = fopen("temp.csv", "w");
+  rewind(file_pointer);
+
+  while(1)
+  {
+    ch = fgetc(file_pointer);
+    if (ch == '\n' || ch == EOF)
+    {
+      column = 0;
+      row++;
+
+      if((row > 0) && (length_of_replace_input == strlen(current_record)) && (lossey_str_cmp(current_record, input))){
+        match_found = true;
+      }
+
+      if (ch == '\n') append_char_to_string(&no_match_s, ch);
+      if (ch == '\n') append_char_to_string(&match_s, ch);
+
+      printf("match: %s\n", match_s);
+      printf("no match: %s\n", no_match_s);
+      printf("\n");
+      (match_found) ? fputs(match_s, temp_file_pointer) : fputs(no_match_s, temp_file_pointer);
+      if(match_found) number_of_replacements++;
+      match_found = false;
+      insterted = false;
+      clearString(match_s);
+      clearString(no_match_s);
+      clearString(current_record);
+      if(ch == EOF) break;
+    }
+    else if (ch == ',' && quotes % 2 == 0)
+    {
+      column++;
+      if((row > 0) && (length_of_replace_input == strlen(current_record)) && (lossey_str_cmp(current_record, input))){
+        match_found = true;
+      }
+      insterted = false;
+      append_char_to_string(&no_match_s, ch);
+      append_char_to_string(&match_s, ch);
+      clearString(current_record);
+    }
+    else if (ch == '"')
+    {
+      quotes++;
+      append_char_to_string(&current_record, ch);
+      append_char_to_string(&no_match_s, ch);
+
+      if(column == index && !insterted){
+        for(int i=0; i<strlen(replace); i++){
+          append_char_to_string(&match_s, replace[i]);
+        }
+        insterted = true;
+      }
+      else if(column != index){
+        append_char_to_string(&match_s, ch);
+      }
+    }
+    else{
+      append_char_to_string(&current_record, ch);
+      append_char_to_string(&no_match_s, ch);
+
+      if(column == index && !insterted){
+        for(int i=0; i<strlen(replace); i++){
+          append_char_to_string(&match_s, replace[i]);
+        }
+        insterted = true;
+      }
+      else if(column != index){
+        append_char_to_string(&match_s, ch);
+      }
+    }
+
+  }
+  printf("Number of replacements: %d\n", number_of_replacements);
+  char *name_of_table = schema->table_name;
+  int status = remove(name_of_table);
+  if (!(status == 0))
+  {
+    perror("Failed to delete the file");
+    exit(EXIT_FAILURE);
+  }
+  rename("temp.csv", name_of_table);
+  fclose(temp_file_pointer);
+  rewind(file_pointer);
+  free(no_match_s);
+  free(match_s);
+  free(current_record);
 }
 
 int main()
@@ -465,6 +718,7 @@ int main()
     // exit(EXIT_FAILURE);
 
     FILE *file_parser = fopen(table->table_name, "r");
+    read_fields_csv(table, file_parser);
 
     // add_field(table, "field7", "int");
     int num_rows = get_rows(file_parser); // Call get_rows once and store the
@@ -475,12 +729,12 @@ int main()
       exit(EXIT_FAILURE);
     }
 
-    char **column_data = (char **)malloc(num_rows * sizeof(char *));
-    if (column_data == NULL)
-    {
-      perror("Failed to allocate memory for column_data");
-      exit(EXIT_FAILURE);
-    }
+    //char **column_data = (char **)malloc(num_rows * sizeof(char *));
+    //if (column_data == NULL)
+    //{
+      //perror("Failed to allocate memory for column_data");
+      //exit(EXIT_FAILURE);
+    //}
 
     // for (int i = 0; i < num_rows; ++i) {
     //     column_data[i] = malloc(sizeof(char)+1);  // Initialize as NULL,
@@ -491,16 +745,15 @@ int main()
 
     //bool x = is_in_table(table, file_parser, "IT sales professional");
     //printf("Your boolean variable is: %s\n", x ? "true" : "false");
-    printf("num_of_rows:%d\n", get_rows(file_parser));
-    print_entire_table(file_parser);
-    printf("num_of_rows:%d\n", get_rows(file_parser));
-    /*
-     for (int i = 0; i < num_rows - 1; i++) {
+    //printf("num_of_rows:%d\n", get_rows(file_parser));
+    update_record_based_on_another_record(table, file_parser, "6", "field1", "BBBBB");
+    //printf("num_of_rows:%d\n", get_rows(file_parser));
+    //for (int i = 0; i < num_rows - 1; i++) {
       // printf("column_data[%d] = %s\n", i, column_data[i]);
-      free(column_data[i]);
-    }
-    free(column_data);
-    */
+      //free(column_data[i]);
+    //}
+    //free(column_data);
+
     fclose(file_parser);
   }
   else

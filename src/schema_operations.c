@@ -1,3 +1,4 @@
+#include "../include/schema_operations.h"
 #include "../include/db_structs.h"
 #include <stdbool.h>
 #include <stdio.h>
@@ -14,7 +15,7 @@ void create_entry(TableSchema *schema, char *arr[schema->field_count],FILE *file
 
 //READ
 void read_fields_csv(TableSchema *schema, FILE *file_pointer);
-void select_column_by_field(TableSchema *schema, char *field, FILE *file_pointer, char **arr);
+void select_column_by_field(TableSchema *schema, char *field, FILE *file_pointer);
 bool is_in_table(TableSchema *schema, FILE *file_pointer, char *input);
 void print_rows_including_input(FILE* file_pointer, char* input);
 void print_entire_table(FILE* file_pointer);
@@ -185,12 +186,12 @@ bool lossey_str_cmp(char *input, char *existing_field)
   return false;
 }
 
-void select_column_by_field(TableSchema *schema, char *field, FILE *file_pointer, char **arr)
+void select_column_by_field(TableSchema *schema, char *field, FILE *file_pointer)
 {
-  if (schema == NULL || field == NULL || file_pointer == NULL || arr == NULL)
+  if (schema == NULL || field == NULL || file_pointer == NULL)
   {
     fprintf(stderr, "Invalid input to function\n");
-    return; // Optionally handle the error more gracefully or exit if critical
+    exit(EXIT_FAILURE); // Optionally handle the error more gracefully or exit if critical
   }
 
   //read_fields_csv(schema, file_pointer);
@@ -226,10 +227,7 @@ void select_column_by_field(TableSchema *schema, char *field, FILE *file_pointer
       if (row > 1)
       {
         s[i] = '\0';
-        // printf("s: %s\n", s);
-        // printf("row: %d\n", row-2);
-        // arr[row-2] = malloc(strlen(s) + 99);
-        arr[row - 2] = strdup(s);
+        printf("\n");
         i = 0;
         s[0] = '\0';
       }
@@ -247,7 +245,7 @@ void select_column_by_field(TableSchema *schema, char *field, FILE *file_pointer
 
     if (column == index && row > 0)
     {
-      // printf("%c", ch);
+      printf("%c", ch);
       s[i++] = ch;
     }
 
@@ -741,12 +739,12 @@ int main()
     //     allocate later as needed
     // }
 
-    // select_column_by_field(table, "Job Title", file_parser, column_data);
+    select_column_by_field(table, "City", file_parser);
 
     //bool x = is_in_table(table, file_parser, "IT sales professional");
     //printf("Your boolean variable is: %s\n", x ? "true" : "false");
     //printf("num_of_rows:%d\n", get_rows(file_parser));
-    update_record_based_on_another_record(table, file_parser, "6", "field1", "BBBBB");
+    //update_record_based_on_another_record(table, file_parser, "6", "field1", "BBBBB");
     //printf("num_of_rows:%d\n", get_rows(file_parser));
     //for (int i = 0; i < num_rows - 1; i++) {
       // printf("column_data[%d] = %s\n", i, column_data[i]);

@@ -28,6 +28,7 @@ void update_record_based_on_another_record(TableSchema* schema, FILE* file_point
 void delete_last_line(TableSchema *schema, FILE *file_pointer, int num_of_lines);
 void delete_row_including_input(TableSchema *schema, FILE *file_pointer, char *input);
 void delete_entire_column_based_on_field_input(TableSchema* schema, FILE* file_pointer, char* field);
+void delete_entire_table(TableSchema* schema);
 
 
 TableSchema *create_table_schema(char *name)
@@ -421,7 +422,7 @@ void print_rows_including_input(FILE* file_pointer, char* input){
   char ch = '?';
   rewind(file_pointer);
   int row = 0;
-  bool something_was_deleted = false;
+  bool found = false;
 
   while(1){
     ch = fgetc(file_pointer);
@@ -429,11 +430,14 @@ void print_rows_including_input(FILE* file_pointer, char* input){
     append_char_to_string(&line, ch);
     if(ch == '\n'){
       row++;
-      if(lossey_str_cmp(input, line)) printf("%s", line);
+      if(lossey_str_cmp(input, line)){
+        printf("%s", line);
+        found = true;
+      }
       line = NULL;
     }
-
   }
+  if(!found) printf("No entry containing '%s' was found\n", input);
   rewind(file_pointer);
   free(line);
   line = NULL;
@@ -703,81 +707,91 @@ void update_record_based_on_another_record(TableSchema* schema, FILE* file_point
   free(current_record);
 }
 
-int main()
-{
-  char name_of_table[100] = "customers-100";
-  char *file_type = ".csv";
-  strcat(name_of_table, file_type);
-  TableSchema *table = create_table_schema(name_of_table);
-
-  if (file_exists(table->table_name))
+void delete_entire_table(TableSchema* schema){
+  char* name_of_table = schema->table_name;
+  int status = remove(name_of_table);
+  if (!(status == 0))
   {
-    // printf("File with name '%s' already exists.\n", table->table_name);
-    // exit(EXIT_FAILURE);
-
-    FILE *file_parser = fopen(table->table_name, "r");
-    read_fields_csv(table, file_parser);
-
-    // add_field(table, "field7", "int");
-    int num_rows = get_rows(file_parser); // Call get_rows once and store the
-                                          // result to avoid multiple calls
-    if (num_rows <= 0)
-    {
-      fprintf(stderr, "Failed to get the number of rows\n");
-      exit(EXIT_FAILURE);
-    }
-
-    //char **column_data = (char **)malloc(num_rows * sizeof(char *));
-    //if (column_data == NULL)
-    //{
-      //perror("Failed to allocate memory for column_data");
-      //exit(EXIT_FAILURE);
-    //}
-
-    // for (int i = 0; i < num_rows; ++i) {
-    //     column_data[i] = malloc(sizeof(char)+1);  // Initialize as NULL,
-    //     allocate later as needed
-    // }
-
-    select_column_by_field(table, "City", file_parser);
-
-    //bool x = is_in_table(table, file_parser, "IT sales professional");
-    //printf("Your boolean variable is: %s\n", x ? "true" : "false");
-    //printf("num_of_rows:%d\n", get_rows(file_parser));
-    //update_record_based_on_another_record(table, file_parser, "6", "field1", "BBBBB");
-    //printf("num_of_rows:%d\n", get_rows(file_parser));
-    //for (int i = 0; i < num_rows - 1; i++) {
-      // printf("column_data[%d] = %s\n", i, column_data[i]);
-      //free(column_data[i]);
-    //}
-    //free(column_data);
-
-    fclose(file_parser);
+    perror("Failed to delete the file");
+    exit(EXIT_FAILURE);
+  } else {
+    printf("'%s' successfully deleted\n", name_of_table);
   }
-  else
-  {
-    // create file and add fields
-    FILE *file_pointer = fopen(table->table_name, "w+");
-    add_field(table, "field1", "int");
-    add_field(table, "field2", "char");
-    add_field(table, "field3", "int");
-    add_field(table, "field4", "char");
-    add_field(table, "field5", "int");
-    add_field(table, "field6", "char");
-
-    create_csv(table, file_pointer);
-
-    char *entry1[6] = {"1", "a", "2", "b", "3", "c"};
-    create_entry(table, entry1, file_pointer);
-    char *entry2[6] = {"d", "4", "e", "5", "f", "6"};
-    create_entry(table, entry2, file_pointer);
-
-    for (int i = 0; i < table->field_count; i++)
-    {
-      // printf("name: %s index: %d\n", table->fields[i].name,
-      // table->fields[i].field_index);
-    }
-    fclose(file_pointer);
-  }
-  freeTableSchema(table);
 }
+
+// int main()
+// {
+//   char name_of_table[100] = "customers-100";
+//   char *file_type = ".csv";
+//   strcat(name_of_table, file_type);
+//   TableSchema *table = create_table_schema(name_of_table);
+
+//   if (file_exists(table->table_name))
+//   {
+//     // printf("File with name '%s' already exists.\n", table->table_name);
+//     // exit(EXIT_FAILURE);
+
+//     FILE *file_parser = fopen(table->table_name, "r");
+//     read_fields_csv(table, file_parser);
+
+//     // add_field(table, "field7", "int");
+//     int num_rows = get_rows(file_parser); // Call get_rows once and store the
+//                                           // result to avoid multiple calls
+//     if (num_rows <= 0)
+//     {
+//       fprintf(stderr, "Failed to get the number of rows\n");
+//       exit(EXIT_FAILURE);
+//     }
+
+//     //char **column_data = (char **)malloc(num_rows * sizeof(char *));
+//     //if (column_data == NULL)
+//     //{
+//       //perror("Failed to allocate memory for column_data");
+//       //exit(EXIT_FAILURE);
+//     //}
+
+//     // for (int i = 0; i < num_rows; ++i) {
+//     //     column_data[i] = malloc(sizeof(char)+1);  // Initialize as NULL,
+//     //     allocate later as needed
+//     // }
+
+//     //bool x = is_in_table(table, file_parser, "IT sales professional");
+//     //printf("Your boolean variable is: %s\n", x ? "true" : "false");
+//     //printf("num_of_rows:%d\n", get_rows(file_parser));
+//     //update_record_based_on_another_record(table, file_parser, "6", "field1", "BBBBB");
+//     //printf("num_of_rows:%d\n", get_rows(file_parser));
+//     //for (int i = 0; i < num_rows - 1; i++) {
+//       // printf("column_data[%d] = %s\n", i, column_data[i]);
+//       //free(column_data[i]);
+//     //}
+//     //free(column_data);
+
+//     fclose(file_parser);
+//   }
+//   else
+//   {
+//     // create file and add fields
+//     FILE *file_pointer = fopen(table->table_name, "w+");
+//     add_field(table, "field1", "int");
+//     add_field(table, "field2", "char");
+//     add_field(table, "field3", "int");
+//     add_field(table, "field4", "char");
+//     add_field(table, "field5", "int");
+//     add_field(table, "field6", "char");
+
+//     create_csv(table, file_pointer);
+
+//     char *entry1[6] = {"1", "a", "2", "b", "3", "c"};
+//     create_entry(table, entry1, file_pointer);
+//     char *entry2[6] = {"d", "4", "e", "5", "f", "6"};
+//     create_entry(table, entry2, file_pointer);
+
+//     for (int i = 0; i < table->field_count; i++)
+//     {
+//       // printf("name: %s index: %d\n", table->fields[i].name,
+//       // table->fields[i].field_index);
+//     }
+//     fclose(file_pointer);
+//   }
+//   freeTableSchema(table);
+// }

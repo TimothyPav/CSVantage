@@ -325,6 +325,7 @@ bool is_in_table(TableSchema *schema, FILE *file_pointer, char *input)
   char ch;
   int column = 0, row = 0, quotes = 0, i = 0;
   char s[255] = {0};
+  bool found_something = false;
   while (ch != EOF)
   {
     // printf("Hello\n");
@@ -335,7 +336,7 @@ bool is_in_table(TableSchema *schema, FILE *file_pointer, char *input)
       if (lossey_str_cmp(input, s))
       {
         printf("Match found at [row][column]: [%d][%d]\n", row + 1, column + 1);
-        return true;
+        found_something = true;
       }
       column = 0;
       row++;
@@ -350,7 +351,7 @@ bool is_in_table(TableSchema *schema, FILE *file_pointer, char *input)
       if (lossey_str_cmp(input, s))
       {
         printf("Match found at [row][column]: [%d][%d]\n", row + 1, column + 1);
-        return true;
+        found_something = true;
       }
       column++;
       i = 0;
@@ -366,7 +367,12 @@ bool is_in_table(TableSchema *schema, FILE *file_pointer, char *input)
       s[i++] = ch;
     }
   }
-  return false;
+  if(!found_something){
+    printf("No record matching '%s' found\n", input);
+    return false;
+  } else {
+    return true;
+  }
 }
 
 void delete_last_line(TableSchema *schema, FILE *file_pointer, int num_of_lines)
@@ -558,7 +564,7 @@ void clearString(char *str) {
 }
 
 void update_find_and_replace(TableSchema* schema, FILE* file_pointer, char* find_input, char* replace_input){
-  char* s;
+  char* s = NULL;
   char ch = '?';
   int column = 0, row = 0, quotes = 0, number_of_replacements = 0;
   int length_of_replace_input = strlen(find_input);
@@ -628,6 +634,7 @@ void update_record_based_on_another_record(TableSchema* schema, FILE* file_point
   int index = -1;
   for (int i = 0; i < schema->field_count; i++)
   {
+    printf("Attempting to match '%s' with '%s'\n", field, schema->fields[i].name);
     if (lossey_str_cmp(field, schema->fields[i].name))
     {
       index = schema->fields[i].field_index - 1;
@@ -639,9 +646,9 @@ void update_record_based_on_another_record(TableSchema* schema, FILE* file_point
     printf("No field matching '%s' found\n", field);
     exit(EXIT_FAILURE);
   }
-  char* no_match_s;
-  char* match_s;
-  char* current_record;
+  char* no_match_s = NULL;
+  char* match_s = NULL;
+  char* current_record = NULL;
   char ch = '?';
   int column = 0, row = 0, quotes = 0, number_of_replacements = 0;
   int length_of_replace_input = strlen(input);
@@ -665,9 +672,6 @@ void update_record_based_on_another_record(TableSchema* schema, FILE* file_point
       if (ch == '\n') append_char_to_string(&no_match_s, ch);
       if (ch == '\n') append_char_to_string(&match_s, ch);
 
-      printf("match: %s\n", match_s);
-      printf("no match: %s\n", no_match_s);
-      printf("\n");
       (match_found) ? fputs(match_s, temp_file_pointer) : fputs(no_match_s, temp_file_pointer);
       if(match_found) number_of_replacements++;
       match_found = false;
@@ -731,9 +735,9 @@ void update_record_based_on_another_record(TableSchema* schema, FILE* file_point
   rename("temp.csv", name_of_table);
   fclose(temp_file_pointer);
   rewind(file_pointer);
-  free(no_match_s);
-  free(match_s);
-  free(current_record);
+  free(no_match_s); no_match_s = NULL;
+  free(match_s); match_s = NULL;
+  free(current_record); current_record = NULL;
 }
 
 void delete_entire_table(TableSchema* schema){

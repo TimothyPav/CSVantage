@@ -9,6 +9,8 @@ void printHelp();
 void create_csv_command(char* name);
 void print_creat_csv_command_menu(TableSchema* schema, FILE* file_pointer);
 void print_load_csv_command_menu(char* name);
+void print_read_menu(TableSchema* schema, FILE* file_reader);
+void print_update_menu(TableSchema* schema, FILE* file_reader);
 
 
 int main(){
@@ -93,13 +95,13 @@ void print_load_csv_command_menu(char* name){
         printf("[M]ain Menu\n");
         printf("[Q]uit\n");
         printf("\n");
+        FILE* file_reader = fopen(name, "r");
         printf("Enter a command: ");
         scanf(" %c", &command);
 
         switch(command){
             case 'c':
             case 'C':
-                FILE* file_reader = fopen(name, "r");
                 char create;
                 printf("Create new row. press y to continue: ");
                 scanf(" %c", &create);
@@ -122,15 +124,16 @@ void print_load_csv_command_menu(char* name){
                 }
                 printf("Records successfully inserted!\n");
                 printf("\n");
-                fclose(file_reader);
                 break;
 
             case 'r':
             case 'R':
+                print_read_menu(table, file_reader);
                 break;
 
             case 'u':
             case 'U':
+                print_update_menu(table, file_reader);
                 break;
 
             case 'd':
@@ -152,7 +155,198 @@ void print_load_csv_command_menu(char* name){
         }
     }
 }
+//RUD
+void print_read_menu(TableSchema* schema, FILE* file_reader){
+    char command;
+    bool quit = false;
+    while(!quit){
+        printf("\n");
+        printf("----csv READ menu----\n");
+        printf("\n");
+        printf("[S]elect columns by a field\n");
+        printf("[C]heck if a value is in the csv file\n");
+        printf("[T]arget rows including an input\n");
+        printf("[P]rint entire table\n");
+        printf("[B]ack\n");
+        printf("[Q]uit\n");
+        printf("\n");
+        char input[127] = {0};
+        printf("Enter a command: ");
+        scanf(" %c", &command);
 
+        switch(command){
+            case 's':
+            case 'S':
+                input[127];
+                printf("Enter a field: ");
+                scanf(" %[^\n]",input);
+                select_column_by_field(schema, input, file_reader);
+                rewind(file_reader);
+                break;
+            
+            case 'c':
+            case 'C':
+                input[127];
+                printf("Enter a value to check: ");
+                scanf(" %[^\n]",input);
+                is_in_table(schema, file_reader, input);
+                rewind(file_reader);
+                break;
+
+            case 't':
+            case 'T':
+                input[127];
+                printf("Enter a value to check: ");
+                scanf(" %[^\n]",input);
+                print_rows_including_input(file_reader, input);
+                rewind(file_reader);
+                break;
+
+            case 'p':
+            case 'P':
+                print_entire_table(file_reader);
+                rewind(file_reader);
+                break;
+
+            case 'b':
+            case 'B':
+                quit = true;
+                break;
+
+            case 'q':
+            case 'Q':
+                printf("quitting...\n");
+                exit(EXIT_SUCCESS);
+                break;
+        }
+
+    }
+}
+void print_update_menu(TableSchema* schema, FILE* file_reader){
+    char command;
+    bool quit = false;
+    while(!quit){
+        printf("\n");
+        printf("----csv UPDATE menu----\n");
+        printf("\n");
+        printf("[F]ind and Replace\n");
+        printf("[U]pdate record in specific column based on another record in that row\n");
+        printf("[B]ack\n");
+        printf("[Q]uit\n");
+        printf("\n");
+        char input[127] = {0};
+        char replace[127] = {0};
+        printf("Enter a command: ");
+        scanf(" %c", &command);
+
+        switch(command){
+            case 'f':
+            case 'F':
+                input[127];
+                replace[127];
+                printf("Enter a value to find: ");
+                scanf(" %[^\n]",input);
+                printf("Enter a value to replace: ");
+                scanf(" %[^\n]",replace);
+                update_find_and_replace(schema, file_reader, input, replace);
+                rewind(file_reader);
+                break;
+
+            case 'u':
+            case 'U':
+                input[127];
+                replace[127];
+                printf("Enter a value to find: ");
+                scanf(" %[^\n]",input);
+                printf("Enter a value to replace: ");
+                scanf(" %[^\n]",replace);
+                char field[127] = {0};
+                printf("Enter the field you want to insert your replacement: ");
+                scanf(" %[^\n]",field);
+                update_record_based_on_another_record(schema, file_reader, input, field, replace);
+                rewind(file_reader);
+                break;
+
+            case 'b':
+            case 'B':
+                quit = true;
+                break;
+
+            case 'q':
+            case 'Q':
+                printf("quitting...\n");
+                exit(EXIT_SUCCESS);
+                break;   
+        }
+    }
+}
+void print_delete_menu(TableSchema* schema, FILE* file_reader){
+    char command;
+    bool quit = false;
+    while(!quit){
+        printf("\n");
+        printf("----csv DELETE menu----\n");
+        printf("\n");
+        printf("Delete [L]ast lines\n");
+        printf("Delete [R]ow including an input\n");
+        printf("Delete [C]olumn based on field input\n");
+        printf("Delete [F]ile\n");
+        printf("[B]ack\n");
+        printf("[Q]uit\n");
+        printf("\n");
+        char input[127] = {0};
+        printf("Enter a command: ");
+        scanf(" %c", &command);
+
+        switch(command){
+            case 'l':
+            case 'L':
+                input[127];
+                printf("Enter number of lines to delete: ");
+                scanf(" %[^\n]",input);
+                delete_last_line(schema, file_reader, input);
+                rewind(file_reader);
+                break;
+
+            case 'r':
+            case 'R':
+                input[127];
+                printf("Enter a value to delete the row the value is in: ");
+                scanf(" %[^\n]",input);
+                delete_row_including_input(schema, file_reader, input);
+                rewind(file_reader);
+                break;
+
+            case 'c':
+            case 'C':
+                input[127];
+                printf("Enter a field to delete with all its contents: ");
+                scanf(" %[^\n]",input);
+                delete_entire_column_based_on_field_input(schema, file_reader, input);
+                rewind(file_reader);
+                break;
+
+            case 'f':
+            case 'F':
+                char sure;
+                printf("Are you sure? press y to continue...  ");
+                scanf(" %c",&sure);
+                if(sure == 'y' || sure == 'Y') delete_entire_table(schema);
+                break;
+            
+            case 'b':
+            case 'B':
+                quit = true;
+                break;
+
+            case 'q':
+            case 'Q':
+                printf("quitting...\n");
+                exit(EXIT_SUCCESS);
+                break;
+        }
+    }
+}
 void create_csv_command(char* name){
     int i = strlen(name);
     if(!(name[i-4] == '.' && name[i-3] == 'c' && name[i-2] == 's' && name[i-1] == 'v')){

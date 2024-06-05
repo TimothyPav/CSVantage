@@ -75,16 +75,45 @@ void create_csv(TableSchema *schema, FILE *file_pointer)
   }
 }
 
-void create_entry(TableSchema *schema, char *arr[schema->field_count],
-                  FILE *file_pointer)
+void create_entry(TableSchema *schema, char *arr[schema->field_count], FILE *file_pointer)
 {
+  FILE *temp_file_pointer = fopen("temp.csv", "w+");
+  rewind(file_pointer);
+  char ch;
+  while(1){
+    ch = fgetc(file_pointer);
+    if(ch == EOF){
+      break;
+    }
+    fputc(ch, temp_file_pointer);
+  }
+  fputc('\n', temp_file_pointer);
   for (int i = 0; i < schema->field_count; i++)
   {
-    if (i == schema->field_count - 1)
-      fprintf(file_pointer, "%s\n", arr[i]);
-    else
-      fprintf(file_pointer, "%s,", arr[i]);
+    if (i == schema->field_count - 1){
+      fputs(arr[i], temp_file_pointer);
+      //fputc('\n', temp_file_pointer);
+    }
+    else{
+      fputs(arr[i], temp_file_pointer);
+      fputc(',', temp_file_pointer);
+    }
   }
+
+  char *name_of_table = schema->table_name;
+  int status = remove(name_of_table);
+  if (status == 0)
+  {
+    //printf("File deleted successfully.\n");
+  }
+  else
+  {
+    perror("Failed to delete the file");
+    exit(EXIT_FAILURE);
+  }
+  rename("temp.csv", name_of_table);
+  fclose(temp_file_pointer);
+  rewind(file_pointer);
 }
 
 void append_char_to_string(char **str, char c)
@@ -142,15 +171,15 @@ void read_fields_csv(TableSchema *schema, FILE *file_pointer)
     if (ch == ',')
     {
       s[i] = '\0';
-      add_field(schema, s, "placeholder");
+      add_field(schema, s, "N/A");
       field_num++;
       i = 0;
       s[0] = '\0';
     }
     else if (ch == '\n')
     {
-      s[i] = '\0';
-      add_field(schema, s, "placeholder");
+      s[i-1] = '\0';
+      add_field(schema, s, "N/A");
       field_num++;
       i = 0;
       s[0] = '\0';

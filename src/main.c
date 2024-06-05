@@ -1,6 +1,7 @@
 #include "../include/schema_operations.h"
 #include "../include/db_structs.h"
 #include <stdio.h>
+#include <string.h>
 
 void printLogo();
 void printMainMenu();
@@ -75,14 +76,14 @@ void printMainMenu(){
 
 void print_load_csv_command_menu(char* name){
     TableSchema* table = create_table_schema(name);
-    FILE* file_pointer = fopen(table->table_name, "r");
-
+    FILE* file_reader = fopen(name, "r");
+    read_fields_csv(table, file_reader);
 
     char command;
     bool quit = false;
+    printf("'%s' successfully loaded!\n", name);
     while(!quit){
         printf("\n");
-        printf("'%s' successfully loaded!\n", name);
         printf("----csv CRUD menu----\n");
         printf("\n");
         printf("[C]reate\n");
@@ -98,6 +99,7 @@ void print_load_csv_command_menu(char* name){
         switch(command){
             case 'c':
             case 'C':
+                FILE* file_reader = fopen(name, "r");
                 char create;
                 printf("Create new row. press y to continue: ");
                 scanf(" %c", &create);
@@ -111,15 +113,16 @@ void print_load_csv_command_menu(char* name){
                     for(int i=0; i<field_count_var; i++){
                         char input[127] = {0};
                         printf("%s: ", table->fields[i].name);
-                        scanf(" %s", input); //NEED TO STORE INPUT ALSO THIS CODE IS BROKEN!!!!! DOES NOT WAIT FOR USER INPUT
-                        printf("\n");
-                        pointers_to_fields_names[i] = malloc(strlen((table->fields[i].name) + 1) * sizeof(char));
+                        scanf(" %[^\n]",input);
+                        pointers_to_fields_names[i] = malloc(strlen(input) + 1);
+                        strcpy(pointers_to_fields_names[i], input);
                     }
-                    create_entry(table, pointers_to_fields_names, file_pointer);
+                    create_entry(table, pointers_to_fields_names, file_reader);
                     for(int i=0; i<field_count_var; i++) { free(pointers_to_fields_names[i]); }
                 }
+                printf("Records successfully inserted!\n");
                 printf("\n");
-
+                fclose(file_reader);
                 break;
 
             case 'r':

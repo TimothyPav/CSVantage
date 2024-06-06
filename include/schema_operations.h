@@ -6,6 +6,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+void freeTableSchema(TableSchema *schema);
+
 // (C)REATE
 
 /**

@@ -381,7 +381,6 @@ void delete_last_line(TableSchema *schema, FILE *file_pointer, int num_of_lines)
   char ch = '?';
   rewind(file_pointer);
   int rows = get_rows(file_pointer);
-  printf("get_rows:%d\n", rows);
   int row_num = 0;
   int to_delete_rows = 0;
   while (1)
@@ -407,6 +406,7 @@ void delete_last_line(TableSchema *schema, FILE *file_pointer, int num_of_lines)
     perror("Failed to delete the file");
     exit(EXIT_FAILURE);
   }
+  printf("Successfully deleted %d lines\n", num_of_lines);
   rename("temp.csv", name_of_table);
   fclose(temp_file_pointer);
   rewind(file_pointer);

@@ -11,6 +11,10 @@ void print_creat_csv_command_menu(TableSchema* schema, FILE* file_pointer);
 void print_load_csv_command_menu(char* name);
 void print_read_menu(TableSchema* schema, FILE* file_reader);
 void print_update_menu(TableSchema* schema, FILE* file_reader);
+void print_delete_menu(TableSchema* schema, FILE* file_reader);
+void clear_screen();
+void pressAnyKeyToContinue();
+void free_table_and_close_file(TableSchema* schema, FILE* file_pointer);
 
 
 int main(){
@@ -20,11 +24,11 @@ int main(){
 
 void printMainMenu(){
     char menu_option;
-    printLogo();
 
     char command;
     bool quit = false;
     while(!quit){
+        clear_screen();
         printf("\n");
         printf("-------Main Menu-------\n");
         printf("\n");
@@ -44,7 +48,10 @@ void printMainMenu(){
                 printf("Enter the CSV you want to load: ");
                 scanf(" %s", load_filename);
                 if(file_exists(load_filename)) print_load_csv_command_menu(load_filename);
-                else printf("No file with name '%s' found\n", load_filename);
+                else {
+                    printf("No file with name '%s' found\n", load_filename);
+                    pressAnyKeyToContinue();
+                }
                 break;
 
             case 'c':
@@ -54,6 +61,7 @@ void printMainMenu(){
                 printf("Enter a filename: ");
                 scanf(" %s", filename);
                 create_csv_command(filename);
+                pressAnyKeyToContinue();
                 break;
 
             case 'h':
@@ -69,8 +77,8 @@ void printMainMenu(){
 
             default:
                 printf("Command '%c' is not recognized\n", command);
-            
-            
+                pressAnyKeyToContinue();
+                break;
         }
     }
 
@@ -83,11 +91,12 @@ void print_load_csv_command_menu(char* name){
 
     char command;
     bool quit = false;
-    printf("'%s' successfully loaded!\n", name);
     while(!quit){
+        clear_screen();
         printf("\n");
         printf("----csv CRUD menu----\n");
         printf("\n");
+        printf("'%s' successfully loaded!\n", name);
         printf("[C]reate\n");
         printf("[R]ead\n");
         printf("[U]pdate\n");
@@ -138,6 +147,7 @@ void print_load_csv_command_menu(char* name){
 
             case 'd':
             case 'D':
+                print_delete_menu(table, file_reader);
                 break;
 
             case 'm':
@@ -148,10 +158,13 @@ void print_load_csv_command_menu(char* name){
             case 'q':
             case 'Q':
                 printf("quitting...\n");
+                free_table_and_close_file(table, file_reader);
                 exit(EXIT_SUCCESS);
                 break;
             default:
-                    printf("Command '%c' is not recognized\n", command);
+                printf("Command '%c' is not recognized\n", command);
+                pressAnyKeyToContinue();
+                break;
         }
     }
 }
@@ -160,6 +173,7 @@ void print_read_menu(TableSchema* schema, FILE* file_reader){
     char command;
     bool quit = false;
     while(!quit){
+        clear_screen();
         printf("\n");
         printf("----csv READ menu----\n");
         printf("\n");
@@ -182,6 +196,7 @@ void print_read_menu(TableSchema* schema, FILE* file_reader){
                 scanf(" %[^\n]",input);
                 select_column_by_field(schema, input, file_reader);
                 rewind(file_reader);
+                pressAnyKeyToContinue();
                 break;
             
             case 'c':
@@ -191,6 +206,7 @@ void print_read_menu(TableSchema* schema, FILE* file_reader){
                 scanf(" %[^\n]",input);
                 is_in_table(schema, file_reader, input);
                 rewind(file_reader);
+                pressAnyKeyToContinue();
                 break;
 
             case 't':
@@ -200,12 +216,14 @@ void print_read_menu(TableSchema* schema, FILE* file_reader){
                 scanf(" %[^\n]",input);
                 print_rows_including_input(file_reader, input);
                 rewind(file_reader);
+                pressAnyKeyToContinue();
                 break;
 
             case 'p':
             case 'P':
                 print_entire_table(file_reader);
                 rewind(file_reader);
+                pressAnyKeyToContinue();
                 break;
 
             case 'b':
@@ -216,7 +234,13 @@ void print_read_menu(TableSchema* schema, FILE* file_reader){
             case 'q':
             case 'Q':
                 printf("quitting...\n");
+                free_table_and_close_file(schema, file_reader);
                 exit(EXIT_SUCCESS);
+                break;
+
+            default:
+                printf("Command '%c' is not recognized\n", command);
+                pressAnyKeyToContinue();
                 break;
         }
 
@@ -226,6 +250,7 @@ void print_update_menu(TableSchema* schema, FILE* file_reader){
     char command;
     bool quit = false;
     while(!quit){
+        clear_screen();
         printf("\n");
         printf("----csv UPDATE menu----\n");
         printf("\n");
@@ -250,6 +275,7 @@ void print_update_menu(TableSchema* schema, FILE* file_reader){
                 scanf(" %[^\n]",replace);
                 update_find_and_replace(schema, file_reader, input, replace);
                 rewind(file_reader);
+                pressAnyKeyToContinue();
                 break;
 
             case 'u':
@@ -265,6 +291,7 @@ void print_update_menu(TableSchema* schema, FILE* file_reader){
                 scanf(" %[^\n]",field);
                 update_record_based_on_another_record(schema, file_reader, input, field, replace);
                 rewind(file_reader);
+                pressAnyKeyToContinue();
                 break;
 
             case 'b':
@@ -275,8 +302,14 @@ void print_update_menu(TableSchema* schema, FILE* file_reader){
             case 'q':
             case 'Q':
                 printf("quitting...\n");
+                free_table_and_close_file(schema, file_reader);
                 exit(EXIT_SUCCESS);
-                break;   
+                break; 
+
+            default:
+                printf("Command '%c' is not recognized\n", command);
+                pressAnyKeyToContinue();
+                break;
         }
     }
 }
@@ -284,6 +317,7 @@ void print_delete_menu(TableSchema* schema, FILE* file_reader){
     char command;
     bool quit = false;
     while(!quit){
+        clear_screen();
         printf("\n");
         printf("----csv DELETE menu----\n");
         printf("\n");
@@ -300,12 +334,13 @@ void print_delete_menu(TableSchema* schema, FILE* file_reader){
 
         switch(command){
             case 'l':
-            case 'L':
-                input[127];
+            case 'L':                pressAnyKeyToContinue();
+                int input_num = 0;
                 printf("Enter number of lines to delete: ");
-                scanf(" %[^\n]",input);
-                delete_last_line(schema, file_reader, input);
+                scanf(" %d",&input_num);
+                delete_last_line(schema, file_reader, input_num);
                 rewind(file_reader);
+                pressAnyKeyToContinue();
                 break;
 
             case 'r':
@@ -315,6 +350,7 @@ void print_delete_menu(TableSchema* schema, FILE* file_reader){
                 scanf(" %[^\n]",input);
                 delete_row_including_input(schema, file_reader, input);
                 rewind(file_reader);
+                pressAnyKeyToContinue();
                 break;
 
             case 'c':
@@ -324,6 +360,7 @@ void print_delete_menu(TableSchema* schema, FILE* file_reader){
                 scanf(" %[^\n]",input);
                 delete_entire_column_based_on_field_input(schema, file_reader, input);
                 rewind(file_reader);
+                pressAnyKeyToContinue();
                 break;
 
             case 'f':
@@ -332,6 +369,7 @@ void print_delete_menu(TableSchema* schema, FILE* file_reader){
                 printf("Are you sure? press y to continue...  ");
                 scanf(" %c",&sure);
                 if(sure == 'y' || sure == 'Y') delete_entire_table(schema);
+                pressAnyKeyToContinue();
                 break;
             
             case 'b':
@@ -342,7 +380,13 @@ void print_delete_menu(TableSchema* schema, FILE* file_reader){
             case 'q':
             case 'Q':
                 printf("quitting...\n");
+                free_table_and_close_file(schema, file_reader);
                 exit(EXIT_SUCCESS);
+                break;
+            
+            default:
+                printf("Command '%c' is not recognized\n", command);
+                pressAnyKeyToContinue();
                 break;
         }
     }
@@ -364,11 +408,13 @@ void print_creat_csv_command_menu(TableSchema* schema, FILE* file_pointer){
     char command;
     bool quit = false;
     while(!quit){
+        clear_screen();
         printf("\n");
         printf("----Create new CSV file menu----\n");
         printf("\n");
         printf("[A]dd field\n");
         printf("[M]ain Menu\n");
+        printf("[Q]uit\n");
         printf("\n");
         printf("Enter a command: ");
         scanf(" %c", &command);
@@ -382,6 +428,7 @@ void print_creat_csv_command_menu(TableSchema* schema, FILE* file_pointer){
                 add_field(schema, field, "N/A");
                 printf("field '%s' successfully added!\n", field);
                 printf("CSV will update on [M]ain Menu or [Q]uit\n");
+                pressAnyKeyToContinue();
                 break;
 
             case 'm':
@@ -394,10 +441,14 @@ void print_creat_csv_command_menu(TableSchema* schema, FILE* file_pointer){
             case 'Q':
                 create_csv(schema, file_pointer);
                 printf("quitting...\n");
+                freeTableSchema(schema);
                 exit(EXIT_SUCCESS);
                 break;
+
             default:
                 printf("Command '%c' is not recognized\n", command);
+                pressAnyKeyToContinue();
+                break;
         }
 
     }
@@ -412,20 +463,21 @@ void printHelp(){
     printf("\n");
     printf("[C] Create new CSV file:\n");
     printf("    Allows you to create a new CSV file. You will be prompted to enter data.\n");
-    printf("    Syntax: C <filename>\n");
-    printf("    Example: C newfile.csv\n");
+    printf("    Syntax: <filename>\n");
+    printf("    Example: newfile.csv\n");
     printf("\n");
     printf("[H] Help:\n");
     printf("    Displays this help information.\n");
     printf("\n");
     printf("[Q] Quit:\n");
-    printf("    Exits the application. Make sure to save your work.\n");
+    printf("    Exits the application.\n");
     printf("\n");
     printf("General Tips:\n");
     printf("    - Commands are case-insensitive.\n");
     printf("    - Ensure file names do not contain spaces or special characters.\n");
     printf("    - If you encounter errors, check the file name and data format.\n");
     printf("\n");
+    pressAnyKeyToContinue();
 }
 void printLogo(){
     printf("\n");
@@ -442,3 +494,37 @@ void printLogo(){
     printf("                                                                      $$    $$/           \n");
     printf("                                                                       $$$$$$/            \n");
 }
+void clear_screen() {
+#ifdef _WIN32
+    system("cls");
+#else
+    system("clear");
+#endif
+    printLogo();
+}
+void free_table_and_close_file(TableSchema* schema, FILE* file_pointer){
+    freeTableSchema(schema);
+    fclose(file_pointer);
+}
+
+#ifdef _WIN32
+#include <conio.h> // For Windows getch()
+void pressAnyKeyToContinue() {
+    printf("Press any key to continue...\n");
+    getch(); // Use getch() on Windows
+}
+#else
+#include <termios.h>
+#include <unistd.h> // For Unix-like systems read()
+void pressAnyKeyToContinue() {
+    struct termios old_attr, new_attr;
+    int ch;
+    printf("Press any key to continue...\n");
+    tcgetattr(STDIN_FILENO, &old_attr);
+    new_attr = old_attr;
+    new_attr.c_lflag &= ~(ICANON | ECHO);
+    tcsetattr(STDIN_FILENO, TCSANOW, &new_attr);
+    read(STDIN_FILENO, &ch, 1);
+    tcsetattr(STDIN_FILENO, TCSANOW, &old_attr);
+}
+#endif

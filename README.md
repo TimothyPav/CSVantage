@@ -2,11 +2,11 @@
 
 ## 📋 Table of Contents
 
-1. ✨ What is CSVantage?
-2. 🔎 What can CSVantage do?
-3. 🚀 Installation Process
-4. 💻 Technology Used
-5. 📷 Screenshots
+1. [✨ What is CSVantage?](#-what-is-csvantage)
+2. [🔎 What can CSVantage do?](#-what-can-csvantage-do)
+3. [🚀 Installation Process](#-installation-process)
+4. [💻 Technology Used](#-technology-used)
+5. [📷 Screenshots](#-screenshots)
 
 ## ✨ What is CSVantage?
 CSVantage is a **Linux CLI application** built in **C** that performs **CRUD** operations on CSV files. 
@@ -56,4 +56,16 @@ CSVantage is built using the following technologies:
 Below are a few screenshots demonstrating the usage of CSVantage for various operations:
 
 ### Main Menu
-![Main Menu](/CSVantage/images/main_menu)
+![Main Menu](/CSVantage/images/main_menu.png)
+
+This is the main menu where users can choose to create a new CSV file, load an existing file, or get help.
+
+### Creating a New CSV File
+![Creating a New CSV](/CSVantage/images/add_field.png)
+
+The screenshot shows a user adding a new field to a brand new .csv file
+
+### Read Menu
+![Read Menu](/CSVantage/images/read_menu.png)
+
+This is one of the four CRUD menus where users can choose to perform operations on their .csv files

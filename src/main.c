@@ -42,7 +42,7 @@ void printMainMenu(){
 
         switch(command){
             case 'l':
-            case 'L':
+            case 'L': {
                 char load_filename[127];
                 printf("*note must end in .csv!\n");
                 printf("Enter the CSV you want to load: ");
@@ -53,9 +53,10 @@ void printMainMenu(){
                     pressAnyKeyToContinue();
                 }
                 break;
+            }
 
             case 'c':
-            case 'C':
+            case 'C':{
                 char filename[127];
                 printf("*note: must end in .csv!\n");
                 printf("Enter a filename: ");
@@ -63,6 +64,7 @@ void printMainMenu(){
                 create_csv_command(filename);
                 pressAnyKeyToContinue();
                 break;
+            }
 
             case 'h':
             case 'H':
@@ -110,7 +112,7 @@ void print_load_csv_command_menu(char* name){
 
         switch(command){
             case 'c':
-            case 'C':
+            case 'C':{
                 char create;
                 printf("Create new row. press y to continue: ");
                 scanf(" %c", &create);
@@ -134,6 +136,7 @@ void print_load_csv_command_menu(char* name){
                 printf("Records successfully inserted!\n");
                 printf("\n");
                 break;
+            }
 
             case 'r':
             case 'R':
@@ -354,7 +357,7 @@ void print_delete_menu(TableSchema* schema, FILE* file_reader){
                 break;
 
             case 'c':
-            case 'C':
+            case 'C':{
                 input[127];
                 printf("Enter a field to delete with all its contents: ");
                 scanf(" %[^\n]",input);
@@ -362,15 +365,17 @@ void print_delete_menu(TableSchema* schema, FILE* file_reader){
                 rewind(file_reader);
                 pressAnyKeyToContinue();
                 break;
+            }
 
             case 'f':
-            case 'F':
+            case 'F':{
                 char sure;
                 printf("Are you sure? press y to continue...  ");
                 scanf(" %c",&sure);
                 if(sure == 'y' || sure == 'Y') delete_entire_table(schema);
                 pressAnyKeyToContinue();
                 break;
+            }
             
             case 'b':
             case 'B':
@@ -421,7 +426,7 @@ void print_creat_csv_command_menu(TableSchema* schema, FILE* file_pointer){
 
         switch(command){
             case 'a':
-            case 'A':
+            case 'A':{
                 char field[127];
                 printf("Enter a field: ");
                 scanf( "%s", field);
@@ -430,6 +435,7 @@ void print_creat_csv_command_menu(TableSchema* schema, FILE* file_pointer){
                 printf("CSV will update on [M]ain Menu or [Q]uit\n");
                 pressAnyKeyToContinue();
                 break;
+            }
 
             case 'm':
             case 'M':

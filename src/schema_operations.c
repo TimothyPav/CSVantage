@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <windows.h>
 
 #define BUF_SIZE 65536
 
@@ -102,7 +103,7 @@ void create_entry(TableSchema *schema, char *arr[schema->field_count], FILE *fil
 
   char *name_of_table = schema->table_name;
   int status = remove(name_of_table);
-  if (status == 0)
+  if (status != 0)
   {
     //printf("File deleted successfully.\n");
   }

@@ -1,4 +1,4 @@
-![Logo](/CSVantage/images/CSVantage_header_logo.png)
+![Logo](/images/CSVantage_header_logo.png)
 
 ## 📋 Table of Contents
 
@@ -56,16 +56,16 @@ CSVantage is built using the following technologies:
 Below are a few screenshots demonstrating the usage of CSVantage for various operations:
 
 ### Main Menu
-![Main Menu](/CSVantage/images/main_menu.png)
+![Main Menu](/images/main_menu.png)
 
 This is the main menu where users can choose to create a new CSV file, load an existing file, or get help.
 
 ### Creating a New CSV File
-![Creating a New CSV](/CSVantage/images/add_field.png)
+![Creating a New CSV](/images/add_field.png)
 
 The screenshot shows a user adding a new field to a brand new .csv file
 
 ### Read Menu
-![Read Menu](/CSVantage/images/read_menu.png)
+![Read Menu](/images/read_menu.png)
 
 This is one of the four CRUD menus where users can choose to perform operations on their .csv files

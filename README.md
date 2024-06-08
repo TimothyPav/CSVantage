@@ -1,4 +1,4 @@
-![Logo](/images/CSVantage_header_logo.png)
+![Logo](/images/CSVantage_logo.png)
 
 ## 📋 Table of Contents
 
